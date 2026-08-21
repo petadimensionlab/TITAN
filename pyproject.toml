@@ -1,0 +1,32 @@
+[project]
+name = "titan"
+version = "0.1.0"
+description = "TITAN - a multimodal whole-slide foundation model for pathology"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "CC-BY-NC-ND 4.0" }
+authors = [
+    { name = "TD,SJW,AHS,RJC", email = "" },
+]
+dependencies = [
+    "torch>=2.8",
+    "torchvision",
+    "timm",
+    "einops",
+    "einops-exts==0.0.4",
+    "tqdm",
+    "h5py",
+    "transformers>=4.46",
+    "pandas",
+    "scikit-learn",
+    "omegaconf",
+    "PyYAML",
+    "numpy",
+    "huggingface_hub",
+]
+
+[project.optional-dependencies]
+notebook = [
+    "ipykernel",
+    "jupyter",
+]

@@ -15,7 +15,7 @@ from sklearn.metrics import balanced_accuracy_score
 from tqdm import tqdm
 from transformers import AutoModel
 
-from titan.utils import bootstrap, get_eval_metrics, seed_torch
+from titan.utils import amp_dtype, bootstrap, get_device, get_eval_metrics, seed_torch
 
 
 """
@@ -136,7 +136,7 @@ def train(train_loader, val_loader, model, num_epochs, lr, weight_decay, device,
     
     # training loop
     model.train()
-    fp16_scaler = torch.cuda.amp.GradScaler()
+    fp16_scaler = torch.amp.GradScaler(device.type, enabled=device.type in ("cuda", "mps"))
     step = 0
     early_stopping = EarlyStopping(patience=2, verbose=True)
     for epoch in tqdm(range(num_epochs)):
@@ -148,7 +148,7 @@ def train(train_loader, val_loader, model, num_epochs, lr, weight_decay, device,
             lr_scheduler(step)
             features = features.to(device)
             coords = coords.to(device)
-            with torch.cuda.amp.autocast(dtype=torch.bfloat16):
+            with torch.autocast(device_type=device.type, dtype=amp_dtype(device), enabled=device.type in ("cuda", "mps")):
                 logits = model(features, coords, patch_size_lv0.to(device), **kwargs)
                 loss = loss_fn(logits, label.to(device))
             fp16_scaler.scale(loss).backward()
@@ -171,7 +171,7 @@ def train(train_loader, val_loader, model, num_epochs, lr, weight_decay, device,
             model.eval()
             preds_val, targets_val = [], []
             total_val_loss = 0
-            with torch.no_grad(), torch.cuda.amp.autocast(dtype=torch.bfloat16):
+            with torch.no_grad(), torch.autocast(device_type=device.type, dtype=amp_dtype(device), enabled=device.type in ("cuda", "mps")):
                 for features, coords, patch_size_lv0, labels in val_loader:
                     try:
                         logits = model(features.to(device), coords.to(device), patch_size_lv0.to(device), **kwargs)
@@ -208,7 +208,7 @@ def eval(test_loader, model, num_classes, device, prefix, save_location=None, **
     preds_all = []
     probs_all = []
     targets_all = []
-    with torch.no_grad(), torch.cuda.amp.autocast(dtype=torch.bfloat16):
+    with torch.no_grad(), torch.autocast(device_type=device.type, dtype=amp_dtype(device), enabled=device.type in ("cuda", "mps")):
         for features, coords, patch_size_lv0, label in tqdm(test_loader):
             try:
                 logits = model(features.to(device), coords.to(device), patch_size_lv0.to(device), **kwargs)
@@ -249,7 +249,7 @@ def eval(test_loader, model, num_classes, device, prefix, save_location=None, **
 
 if __name__ == "__main__":
     torch.multiprocessing.set_sharing_strategy("file_system")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = get_device()
     seed_torch(device, 0)
 
     parser = argparse.ArgumentParser(description="Finetune TITAN")

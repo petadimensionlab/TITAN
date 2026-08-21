@@ -10,6 +10,29 @@ from sklearn.metrics import (accuracy_score, balanced_accuracy_score,
                              log_loss, roc_auc_score)
 from tqdm import tqdm
 
+
+def get_device(prefer_mps: bool = True) -> torch.device:
+    """Return the best compute device available: CUDA > MPS (Apple Silicon) > CPU.
+
+    On Apple Silicon machines ``torch.backends.mps`` enables GPU compute via the
+    Metal backend, so the MPS device is preferred over the CPU fallback.
+    """
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    mps_backend = getattr(torch.backends, "mps", None)
+    if prefer_mps and mps_backend is not None and mps_backend.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
+
+def amp_dtype(device: torch.device) -> torch.dtype:
+    """AMP/autocast precision for a device.
+
+    CUDA prefers ``bfloat16`` for efficiency; MPS and CPU use ``float16``,
+    which has the widest Metal/CPU op support.
+    """
+    return torch.bfloat16 if device.type == "cuda" else torch.float16
+
 # zeroshot prompt templates
 TEMPLATES = [
     "CLASSNAME.",

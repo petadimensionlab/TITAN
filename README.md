@@ -31,14 +31,37 @@ git clone https://github.com/mahmoodlab/TITAN.git
 cd TITAN
 ```
 
-Then create a conda env and install the dependencies:
+This project is managed with **uv** (`pyproject.toml` + `uv.lock`). Create the
+virtual environment and install the dependencies with a single command:
 
 ```bash
-conda create -n titan python=3.9 -y
-conda activate titan
-pip install --upgrade pip
-pip install -e .
+uv sync
 ```
+
+`uv sync` creates a `.venv` and installs all dependencies from `uv.lock`. To
+activate it:
+
+```bash
+source .venv/bin/activate
+```
+
+#### GPU support
+
+On **Apple Silicon (MPS)**, PyTorch's Metal backend is enabled automatically.
+Device selection is handled by `titan.utils.get_device()`, which picks
+**CUDA > MPS > CPU** in order of availability:
+
+```python
+from titan.utils import get_device, amp_dtype
+
+device = get_device()          # torch.device('mps') on Apple Silicon
+print(device)                  # mps
+```
+
+Mixed-precision is also device-agnostic — `amp_dtype(device)` returns
+`bfloat16` on CUDA and `float16` on MPS/CPU, and autocast uses
+`torch.autocast(device_type=device.type, ...)` everywhere, so the same code
+runs unchanged on CUDA, MPS, or CPU.
 
 ### 1. Getting access
 
@@ -75,7 +98,9 @@ We provide two options for TITAN slide feature extraction.
  **Slide feature extraction** Slide-level feature extraction can be done in the following way:
 
 ```python
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from titan.utils import amp_dtype, get_device
+
+device = get_device()
 model = model.to(device)
 
 # load TCGA sample data
@@ -90,7 +115,7 @@ coords = torch.from_numpy(file['coords'][:])
 patch_size_lv0 = file['coords'].attrs['patch_size_level0']
 
 # extract slide embedding
-with torch.autocast('cuda', torch.float16), torch.inference_mode():
+with torch.autocast(device_type=device.type, dtype=amp_dtype(device)), torch.inference_mode():
     features = features.to(device)
     coords = coords.to(device)
     slide_embedding = model.encode_slide_from_patch_features(features, coords, patch_size_lv0)
