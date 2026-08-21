@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "titan"
 version = "0.1.0"
@@ -6,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = { text = "CC-BY-NC-ND 4.0" }
 authors = [
-    { name = "TD,SJW,AHS,RJC", email = "" },
+    { name = "TD,SJW,AHS,RJC" },
 ]
 dependencies = [
     "torch>=2.8",
@@ -16,7 +20,7 @@ dependencies = [
     "einops-exts==0.0.4",
     "tqdm",
     "h5py",
-    "transformers>=4.46",
+    "transformers>=4.46,<5",
     "pandas",
     "scikit-learn",
     "omegaconf",
