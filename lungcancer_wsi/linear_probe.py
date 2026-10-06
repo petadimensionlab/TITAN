@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""DrKitai TITAN embedding linear probe (層化5-fold CV, TITAN公式手順準拠)。
+"""TITAN embedding linear probe (層化5-fold CV, TITAN公式手順準拠)。
 
-使い方: source .venv-titan/bin/activate && python linear_probe_drkitai.py
-入力: results/DrKitai_TITAN/*.pt + summary.csv
-出力: results/DrKitai_TITAN/linear_probe.json + 標準出力にmetrics
+使い方: python linear_probe.py --emb-dir results/<cohort>
+入力: <emb-dir>/*.pt + summary.csv
+出力: <emb-dir>/linear_probe.json + 標準出力にmetrics
 """
 from __future__ import annotations
 import argparse, csv, json, sys
@@ -17,7 +17,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.preprocessing import Normalizer
 
 ROOT = Path(__file__).parent
-DEFAULT_EMB_DIR = ROOT / "results" / "DrKitai_TITAN"
+DEFAULT_EMB_DIR = ROOT / "results" / "wsi_titan"
 
 sys.path.insert(0, str(ROOT / "TITAN"))
 from titan.utils import get_eval_metrics

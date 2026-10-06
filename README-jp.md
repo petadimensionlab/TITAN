@@ -178,12 +178,12 @@ uv run python -m titan.finetune \
 
 肺癌WSI (Hamamatsu `.ndpi`) をTITANで順次解析するスクリプト群:
 
-- `analyze_drkitai_titan.py` — WSI順次処理 (組織マスキング→CONCH v1.5パッチ特徴量→
+- `analyze_wsi_titan.py` — WSI順次処理 (組織マスキング→CONCH v1.5パッチ特徴量→
   `encode_slide_from_patch_features`)。レジューム・ゼロショット対応。
-- `linear_probe_drkitai.py` — スライド埋め込みの層化K-fold線形プローブ。
-- `report_drkitai.py` — `summary.csv` からPCA散布図 + HTMLレポート生成。
-- `extract_metadata_drhatanaka.py` / `analyze_confounds_drhatanaka.py` — 症例ID/検体種別/
-  スキャンバッチのメタデータ抽出と交絡解析 (群aware CV・同一患者検定)。
+- `linear_probe.py` — スライド埋め込みの層化K-fold線形プローブ。
+- `report.py` — `summary.csv` からPCA散布図 + HTMLレポート生成。
+- `extract_metadata.py` / `analyze_confounds.py` — 症例ID/検体種別/スキャンバッチの
+  メタデータ抽出と交絡解析 (群aware CV・同一患者検定)。
 
 詳細は [`lungcancer_wsi/README.md`](lungcancer_wsi/README.md)。患者データと結果は
 `.gitignore` 対象でコミットされません。

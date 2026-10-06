@@ -1,40 +1,32 @@
 #!/usr/bin/env python3
 """
-DrKitai TITAN 順次解析スクリプト
-================================
-data/DrKitai フォルダ内の .ndpi を1枚ずつ順次処理し、
+WSI TITAN 順次解析スクリプト
+============================
+入力フォルダ内の WSI (.ndpi/.svs 等) を1枚ずつ順次処理し、
 TITAN slide embedding を抽出します。
 
 パイプライン (TITAN公式に準拠):
   1. OpenSlide で WSI を開く (20X相当, level0座標系)
-  2. 組織マスク (thumbnail + Otsu) で背景除外しタイル座標を決定
+  2. 組織マスク (サムネイル + 彩度) で背景除外しタイル座標を決定
   3. CONCHv1.5 (titan.return_conch()) でパッチ特徴量抽出
   4. TITAN.encode_slide_from_patch_features() でスライド埋め込み
-  5. results/ に .pt / .h5 + summary.csv を保存 (レジューム対応)
+  5. 出力先に .pt / .h5 + summary.csv を保存 (レジューム対応)
 
 使い方:
-  # まず一覧だけ確認 (重い依存不要, 標準ライブラリのみで動作)
-  python3 analyze_drkitai_titan.py --dry-run
+  # 一覧だけ確認 (重い依存不要, 標準ライブラリのみで動作)
+  python3 analyze_wsi_titan.py --input data/<cohort> --dry-run
 
-  # 環境構築 (Ubuntu/WSL例, OpenSlideシステムライブラリが必要):
-  #   sudo apt update && sudo apt install -y openslide-tools python3-venv
-  #   python3 -m venv .venv && source .venv/bin/activate
-  #   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
-  #   pip install transformers"<5" huggingface_hub h5py openslide-python pillow numpy pandas tqdm
-  #   huggingface-cli login   # MahmoodLab/TITAN は gated のため事前にAccess申請
-  #
-  # 先頭2枚だけテスト:
-  #   python3 analyze_drkitai_titan.py --limit 2
-  # 全件実行:
-  #   python3 analyze_drkitai_titan.py
-  # GPU指定・上書き:
-  #   python3 analyze_drkitai_titan.py --device cuda --overwrite
+  # 本実行
+  python3 analyze_wsi_titan.py --input data/<cohort> --output results/<cohort>_TITAN
 
-対象データ例:
-  data/DrKitai/TITAN検討用 HE/G12C-1_HE - 2025-02-25 10.32.55.ndpi (59 files, ~18GB)
-  ファイル名 prefix がラベル: G12C / other / wild (+ wild-6#12 のような枝番あり)
+  # ラベルをファイル名prefixから与える場合 (prefix->label の JSON)
+  python3 analyze_wsi_titan.py --input data/<cohort> --label-map data/<cohort>/labels.json
 
-TITAN: https://github.com/petadimensionlab/TITAN (fork of mahmoodlab/TITAN)
+  # ゼロショット分類まで実行 (プロンプトは ZEROSHOT_PROMPTS を編集)
+  python3 analyze_wsi_titan.py --input data/<cohort> --zeroshot
+
+環境構築・依存は lungcancer_wsi/README.md を参照。
+TITAN: https://github.com/mahmoodlab/TITAN
 """
 
 from __future__ import annotations
@@ -54,27 +46,22 @@ import time
 import traceback
 from pathlib import Path
 
-# 肺癌KRASゼロショット用プロンプト (TITAN zero_shot_classifier用)
-LUNG_PROMPTS = {
-    "G12C": [
-        "lung adenocarcinoma with KRAS G12C mutation.",
-        "KRAS G12C mutant lung cancer histology.",
-    ],
-    "other": [
-        "lung adenocarcinoma with non-G12C KRAS mutation.",
-        "KRAS non-G12C mutant lung cancer histology.",
-    ],
-    "wild": [
-        "KRAS wild-type lung adenocarcinoma.",
-        "lung cancer without KRAS mutation histology.",
-    ],
+# ゼロショット分類用プロンプト (TITAN zero_shot_classifier用)。
+# クラス名は任意。利用するタスクに合わせて書き換えてください。
+# 形態所見など、画像と対応づけたい記述を各クラスに列挙します。
+ZEROSHOT_PROMPTS = {
+    "class_a": ["histological description for class A."],
+    "class_b": ["histological description for class B."],
+    "class_c": ["histological description for class C."],
 }
+# 後方互換のエイリアス
+LUNG_PROMPTS = ZEROSHOT_PROMPTS
 
 # ----------------------------------------------------------------------------
 # 設定
 # ----------------------------------------------------------------------------
-DEFAULT_INPUT = Path(__file__).parent / "data" / "DrKitai"
-DEFAULT_OUTPUT = Path(__file__).parent / "results" / "DrKitai_TITAN"
+DEFAULT_INPUT = Path(__file__).parent / "data"
+DEFAULT_OUTPUT = Path(__file__).parent / "results" / "wsi_titan"
 SUPPORTED_EXTS = {".ndpi", ".svs", ".tif", ".tiff", ".mrxs", ".scn"}
 
 # 20X相当でのタイル間隔 (level0 px)。40Xスキャンなら1024, 20Xなら512。
@@ -91,14 +78,7 @@ def parse_label(filename: str, label_map: dict[str, str] | None = None) -> str:
         keys = [k for k in label_map if stem.startswith(k)]
         if keys:
             return label_map[max(keys, key=len)]
-    base = filename.lower()
-    if base.startswith("g12c"):
-        return "G12C"
-    if base.startswith("other"):
-        return "other"
-    if base.startswith("wild"):
-        return "wild"
-    return "unknown"
+    return "unlabeled"
 
 
 def load_label_map(path: Path | None) -> dict[str, str]:
@@ -333,8 +313,8 @@ def load_models(checkpoint: str | None, device_str: str, logger: logging.Logger)
 # メイン
 # ----------------------------------------------------------------------------
 def main() -> int:
-    ap = argparse.ArgumentParser(description="DrKitai WSIをTITANで順次解析")
-    ap.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="入力フォルダ (default: data/DrKitai)")
+    ap = argparse.ArgumentParser(description="WSIをTITANで順次解析")
+    ap.add_argument("--input", type=Path, default=DEFAULT_INPUT, help="入力フォルダ (default: data/)")
     ap.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="出力フォルダ")
     ap.add_argument("--checkpoint", default=None, help="TITAN ckpt (default: MahmoodLab/TITAN)")
     ap.add_argument("--device", default="auto", help="auto|cuda|cpu (+mps可ならmps)")
@@ -343,8 +323,8 @@ def main() -> int:
     ap.add_argument("--limit", type=int, default=0, help="先頭N件のみ (0=全件, default: 0)")
     ap.add_argument("--overwrite", action="store_true", help="既存.ptを再計算")
     ap.add_argument("--dry-run", action="store_true", help="一覧表示のみ (torch不要)")
-    ap.add_argument("--zeroshot", action="store_true", help="G12C/other/wildゼロショット分類まで実行")
-    ap.add_argument("--label-map", type=Path, default=None, help="prefix->label のJSON (例: data/DrHatanaka/labels.json)")
+    ap.add_argument("--zeroshot", action="store_true", help="ZEROSHOT_PROMPTS によるゼロショット分類まで実行")
+    ap.add_argument("--label-map", type=Path, default=None, help="prefix->label のJSON (ラベルをファイル名から与える場合)")
     ap.add_argument("--log-level", default="INFO")
     args = ap.parse_args()
 
@@ -353,7 +333,7 @@ def main() -> int:
         level=getattr(logging, args.log_level.upper(), logging.INFO),
         format="%(asctime)s [%(levelname)s] %(message)s",
     )
-    logger = logging.getLogger("drkitai-titan")
+    logger = logging.getLogger("wsi-titan")
 
     if not args.input.exists():
         logger.error(f"入力フォルダがありません: {args.input}")

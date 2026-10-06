@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""results/DrKitai_TITAN/summary.csv + *.pt からHTMLレポート生成 (torch不要でもCSV集計は可)。"""
+"""summary.csv + *.pt からPCA散布図とHTMLレポートを生成する。"""
 from __future__ import annotations
 import argparse
 from pathlib import Path
@@ -7,9 +7,9 @@ import pandas as pd
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input", type=Path, default=Path("results/DrKitai_TITAN/summary.csv"))
-    ap.add_argument("--emb-dir", type=Path, default=Path("results/DrKitai_TITAN"))
-    ap.add_argument("--out", type=Path, default=Path("results/DrKitai_TITAN/report.html"))
+    ap.add_argument("--input", type=Path, default=Path("results/wsi_titan/summary.csv"))
+    ap.add_argument("--emb-dir", type=Path, default=Path("results/wsi_titan"))
+    ap.add_argument("--out", type=Path, default=Path("results/wsi_titan/report.html"))
     args = ap.parse_args()
     if not args.input.exists():
         print(f"summaryがありません: {args.input}。先に analyze を実行してください。")
@@ -49,11 +49,11 @@ def main():
             print(f"PCA保存: {png}")
             # HTML
             rows = "\n".join(f"<tr><td>{n}</td><td>{l}</td></tr>" for n,l in zip(names, labels))
-            args.out.write_text(f"<html><head><meta charset='utf-8'><title>DrKitai TITAN report</title></head><body><h1>DrKitai TITAN report (n={len(embs)})</h1><img src='{png.name}' style='max-width:800px'><h2>slides</h2><table border=1><tr><th>file</th><th>label</th></tr>{rows}</table><p>summary: {args.input}</p></body></html>", encoding="utf-8")
+            args.out.write_text(f"<html><head><meta charset='utf-8'><title>WSI TITAN report</title></head><body><h1>WSI TITAN report (n={len(embs)})</h1><img src='{png.name}' style='max-width:800px'><h2>slides</h2><table border=1><tr><th>file</th><th>label</th></tr>{rows}</table><p>summary: {args.input}</p></body></html>", encoding="utf-8")
             print(f"HTML保存: {args.out}")
     except Exception as e:
         print(f"可視化スキップ: {e}")
-        args.out.write_text(f"<html><body><h1>DrKitai TITAN report</h1><pre>{df.to_string()}</pre></body></html>", encoding="utf-8")
+        args.out.write_text(f"<html><body><h1>WSI TITAN report</h1><pre>{df.to_string()}</pre></body></html>", encoding="utf-8")
     return 0
 
 if __name__ == "__main__":

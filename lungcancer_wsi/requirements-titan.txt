@@ -1,4 +1,4 @@
-# TITAN DrKitai 解析環境 (.venv-titan, Python 3.12, CUDA 12.1)
+# TITAN WSI 解析環境 (.venv-titan, Python 3.12, CUDA 12.1)
 # 導入: uv venv --python 3.12 .venv-titan && source .venv-titan/bin/activate && uv pip install -r requirements-titan.txt
 torch
 torchvision --index-url https://download.pytorch.org/whl/cu121
