@@ -172,6 +172,20 @@ Roughly **linear (~0.08 ms per patch)**. The bundled dummy finetune
 - `notebooks/zeroshot_demo.ipynb` — zero-shot classification
 - `notebooks/linear_probe_demo.ipynb` — linear probing evaluation
 
+## Lung cancer WSI analysis (`lungcancer_wsi/`)
+
+Batch analysis scripts for lung-cancer WSIs (Hamamatsu `.ndpi`) built on TITAN:
+
+- `analyze_drkitai_titan.py` — sequential WSI processing (tissue-aware tiling → CONCH v1.5
+  patch features → `encode_slide_from_patch_features`), resumable, optional zero-shot.
+- `linear_probe_drkitai.py` — stratified K-fold linear probe on slide embeddings.
+- `report_drkitai.py` — PCA scatter + HTML report from `summary.csv`.
+- `extract_metadata_drhatanaka.py` / `analyze_confounds_drhatanaka.py` — case-ID / specimen-type /
+  scan-batch metadata and confound analysis (group-aware CV, same-patient retrieval test).
+
+See [`lungcancer_wsi/README.md`](lungcancer_wsi/README.md). Patient data and results are
+`.gitignore`d and never committed.
+
 ---
 
 ## License and Terms of use

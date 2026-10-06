@@ -30,3 +30,13 @@ logs/
 .omc/
 .omo/
 .DS_Store
+
+# LungCancer_WSI analysis: patient data and outputs (never commit)
+lungcancer_wsi/data/
+lungcancer_wsi/results/
+lungcancer_wsi/.venv*/
+lungcancer_wsi/__pycache__/
+*.ndpi
+*.svs
+*.xlsx
+._*

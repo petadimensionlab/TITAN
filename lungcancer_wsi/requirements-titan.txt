@@ -1,0 +1,21 @@
+# TITAN DrKitai 解析環境 (.venv-titan, Python 3.12, CUDA 12.1)
+# 導入: uv venv --python 3.12 .venv-titan && source .venv-titan/bin/activate && uv pip install -r requirements-titan.txt
+torch
+torchvision --index-url https://download.pytorch.org/whl/cu121
+timm
+einops
+einops-exts==0.0.4
+tqdm
+h5py
+transformers>=4.46,<5
+pandas
+scikit-learn
+omegaconf
+PyYAML
+numpy
+huggingface_hub
+pillow
+openslide-python
+matplotlib
+seaborn
+umap-learn
