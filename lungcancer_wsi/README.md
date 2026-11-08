@@ -21,6 +21,30 @@ TITAN を使って肺癌の全スライド画像 (WSI, Hamamatsu `.ndpi`) を1�
 | `analyze_confounds.py` | 症例ID fold分離・バッチ交絡・同一患者検定 |
 | `run_titan.sh` | 実行ラッパー (OpenSlideパス + venv) |
 | `requirements-titan.txt` | 依存パッケージ |
+| `cohorts.example.json` | コホート構成ファイルのサンプル (実体の `cohorts.json` は gitignore) |
+| `cohorts.py` | `cohorts.json` のローダー (viewer / conch_zeroshot 等が共通利用) |
+| `viewer/` | WSI画像 × 解析結果の統合ビューワ (Flask + OpenSeadragon) と追加解析 |
+| `report_build/` | ビューワ結果からのレポート・スライド資料生成 (deck 生成スクリプト) |
+| `requirements-viewer.txt` | ビューワ・追加解析の依存パッケージ |
+
+## 統合ビューワ (`viewer/`)
+
+WSI (.ndpi) のタイル表示 + TITAN/CONCH パッチ特徴の可視化を行う Flask アプリ。
+`cohorts.json` (サンプル: `cohorts.example.json`) にデータ・結果ディレクトリを書く。
+
+```bash
+uv venv --python 3.12 .venv-viewer && source .venv-viewer/bin/activate
+uv pip install -r requirements-viewer.txt
+cp cohorts.example.json cohorts.json   # 実際のディレクトリ構成に合わせて編集
+./viewer/run_viewer.sh                 # http://localhost:8700
+```
+
+- `viewer/app.py` — スライド一覧・タイル配信・patch オーバーレイ (PCA色 / 組織クラスタ / CONCH)
+- `viewer/conch_zeroshot.py` — CONCH v1.5 による 7クラス zero-shot 分類 + 組織構成・免疫浸潤指標
+  (CONCH 自体のインストールが必要: `pip install conch` or MahmoodLab/CONCH リポジトリ)
+- `viewer/tissue_analysis.py` — patch 特徴の KMeans クラスタリングと H&E 色統計による暫定組織ラベル付与
+- `viewer/make_atlas.py` — クラス別代表 patch のアトラス画像生成 (ビューワの「アトラス patch」表示用)
+- `report_build/build_atlas_deck.py` — アトラスManifestから Marp スライド資料を生成
 
 ## セットアップ
 

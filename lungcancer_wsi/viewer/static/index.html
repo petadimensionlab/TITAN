@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TITAN WSI 統合ビューワ</title>
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/openseadragon.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>TITAN WSI 統合ビューワ</h1>
+  <span id="counts" class="muted"></span>
+  <a id="reportLink" href="/reports/conch_zeroshot_report.html">結果レポート (HTML ダウンロード)</a>
+</header>
+<div id="main">
+  <aside id="sidebar">
+    <input id="search" type="search" placeholder="検索 (名前 / ラベル)">
+    <select id="cohortFilter"></select>
+    <div id="slideList"></div>
+  </aside>
+  <section id="viewerWrap">
+    <div id="toolbar">
+      <label><input type="checkbox" id="togglePatches"> パッチ表示</label>
+      <select id="patchMode">
+        <option value="pca">PCA色分け</option>
+        <option value="cluster">組織クラスタ</option>
+        <option value="conch">CONCH zero-shot</option>
+        <option value="atlas">アトラス patch</option>
+        <option value="outline">輪郭のみ</option>
+      </select>
+      <label>濃度 <input type="range" id="opacity" min="0" max="100" value="55"></label>
+      <button id="fit">全体表示</button>
+      <a id="reportLink" class="btn" hidden target="_blank">レポート</a>
+    </div>
+    <div id="legend" hidden></div>
+    <div id="osd"></div>
+    <div id="viewerPlaceholder" class="muted">左の一覧からスライドを選択してください</div>
+  </section>
+  <aside id="info">
+    <h2 id="infoName">—</h2>
+    <div id="infoBody"></div>
+  </aside>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

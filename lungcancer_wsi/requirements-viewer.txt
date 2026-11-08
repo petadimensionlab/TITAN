@@ -1,0 +1,15 @@
+# 追加解析・ビューワ (viewer/) 用の依存
+# 推論本体 (TITAN) の依存は requirements-titan.txt を参照
+
+# --- ビューワサーバー (app.py / make_atlas.py) ---
+flask>=3.0
+openslide-python>=1.9
+h5py>=3.10
+numpy>=1.26
+Pillow>=10.0
+
+# --- CONCH zero-shot 解析 (conch_zeroshot.py / tissue_analysis.py) ---
+# GPU 環境で実行。conch 自体は GitHub からインストール:
+#   pip install git+https://github.com/mahmoodlab/CONCH.git
+torch>=2.2
+timm>=0.9

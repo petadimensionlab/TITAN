@@ -1,0 +1,27 @@
+{
+  "root": "..",
+  "cohorts": [
+    {
+      "name": "cohort_a",
+      "data_dir": "data/cohort_a",
+      "results_dir": "results/cohort_a_TITAN",
+      "meta_csv": "results/cohort_a_TITAN_m300/metadata.csv"
+    },
+    {
+      "name": "cohort_a_sampled",
+      "data_dir": "data/cohort_a",
+      "results_dir": "results/cohort_a_TITAN_m300"
+    },
+    {
+      "name": "cohort_b",
+      "data_dir": "data/cohort_b",
+      "results_dir": "results/cohort_b_TITAN"
+    }
+  ],
+  "tissue_dir": "results/cohort_a_TITAN/tissue_analysis",
+  "specimens": {
+    "cohort_a": "specimen_type_1",
+    "cohort_a_sampled": "specimen_type_1",
+    "cohort_b": "specimen_type_2"
+  }
+}
